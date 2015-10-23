@@ -1,7 +1,13 @@
 package ch.zhaw.securitylab;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +46,7 @@ public class TLSTester {
 	private void run() throws Exception {
 
 		// To be implemented
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-		tmf.init((KeyStore) null);
+		TrustManagerFactory tmf = initTrustManager();
 		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, tmf.getTrustManagers(), null);
 		SSLSocketFactory factory = sslContext.getSocketFactory();
@@ -58,10 +63,26 @@ public class TLSTester {
 
 	}
 
+	private TrustManagerFactory initTrustManager() throws NoSuchAlgorithmException,
+			KeyStoreException, CertificateException, FileNotFoundException, IOException {
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+		if(trustStore == null){
+			trustStore = "default";
+			tmf.init((KeyStore) null);
+			return tmf;
+		} else {
+			KeyStore ts = KeyStore.getInstance("JKS");
+			ts.load(new FileInputStream(trustStore), password.toCharArray());
+			tmf.init(ts);
+			return tmf;
+		}
+	}
+
 	private void printCertificatesInTruststore(TrustManagerFactory tmf) {
 		final X509TrustManager tm = (X509TrustManager) tmf.getTrustManagers()[0];
 		final X509Certificate[] trustedCerts = tm.getAcceptedIssuers();
-		System.out.format("Use default truststore with %d certificates\n",
+		System.out.format("Use %s truststore with %d certificates\n",
+				trustStore,
 				trustedCerts.length);
 	}
 
