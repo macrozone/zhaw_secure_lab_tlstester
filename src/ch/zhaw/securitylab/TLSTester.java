@@ -47,14 +47,18 @@ public class TLSTester {
 	private void run() throws Exception {
 
 		// To be implemented
+		
 		TrustManagerFactory tmf = initTrustManager();
 		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, tmf.getTrustManagers(), null);
 		SSLSocketFactory factory = sslContext.getSocketFactory();
 
 		printCertificatesInTruststore(tmf);
-
-		SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
+		
+		SSLSocket socket = establishConnection(factory);
+		
+		
+		
 		printHighestTLSVersion(socket);
 		String[] supportedSuites = socket.getSupportedCipherSuites();
 
@@ -65,6 +69,22 @@ public class TLSTester {
 				factory, supportedSuites);
 		printSupportedSuitesByServer(supportedSuitesByServer);
 
+	}
+
+	private SSLSocket establishConnection(SSLSocketFactory factory) {
+		String connected = "OK";
+		SSLSocket socket = null;
+		try{
+			socket = (SSLSocket) factory.createSocket(host, port);
+		} catch(Exception e){
+			connected = "FAILED\n" + e.getMessage();
+		}
+		
+		System.out.format("Check connectivity to %s:%s - %s",
+				host,
+				port,
+				connected);
+		return socket;
 	}
 
 	private void printCertificateChain(SSLSession session)
