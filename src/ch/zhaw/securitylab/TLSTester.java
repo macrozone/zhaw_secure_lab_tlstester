@@ -46,10 +46,7 @@ public class TLSTester {
 		sslContext.init(null, tmf.getTrustManagers(), null);
 		SSLSocketFactory factory = sslContext.getSocketFactory();
 
-		X509TrustManager tm = (X509TrustManager) tmf.getTrustManagers()[0];
-		X509Certificate[] trustedCerts = tm.getAcceptedIssuers();
-		System.out.format("Use default truststore with %d certificates\n",
-				trustedCerts.length);
+		printCertificatesInTruststore(tmf);
 		
 		SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
 		printHighestTLSVersion(socket);
@@ -59,6 +56,13 @@ public class TLSTester {
 				factory, supportedSuites);
 		printSupportedSuitesByServer(supportedSuitesByServer);
 
+	}
+
+	private void printCertificatesInTruststore(TrustManagerFactory tmf) {
+		final X509TrustManager tm = (X509TrustManager) tmf.getTrustManagers()[0];
+		final X509Certificate[] trustedCerts = tm.getAcceptedIssuers();
+		System.out.format("Use default truststore with %d certificates\n",
+				trustedCerts.length);
 	}
 
 	private void printSupportedSuitesByServer(
