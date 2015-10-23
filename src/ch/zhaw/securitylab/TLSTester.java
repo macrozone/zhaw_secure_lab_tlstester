@@ -1,7 +1,13 @@
 package ch.zhaw.securitylab;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,22 +47,18 @@ public class TLSTester {
 	private void run() throws Exception {
 
 		// To be implemented
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-		tmf.init((KeyStore) null);
+		TrustManagerFactory tmf = initTrustManager();
 		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, tmf.getTrustManagers(), null);
 		SSLSocketFactory factory = sslContext.getSocketFactory();
 
 		printCertificatesInTruststore(tmf);
-		
-		
-		
+
 		SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
 		printHighestTLSVersion(socket);
 		String[] supportedSuites = socket.getSupportedCipherSuites();
-		
-		
-		SSLSession session = socket.getSession(); 
+
+		SSLSession session = socket.getSession();
 		printCertificateChain(session);
 		printSupportedCipherSuites(supportedSuites);
 		List<String> supportedSuitesByServer = getEnabledSuitesByServer(
@@ -67,27 +69,47 @@ public class TLSTester {
 
 	private void printCertificateChain(SSLSession session)
 			throws SSLPeerUnverifiedException {
-		X509Certificate[] certificates =
-				(X509Certificate[])session.getPeerCertificates();
-		System.out.format("%d certificates found in chain\n", certificates.length);
+		X509Certificate[] certificates = (X509Certificate[]) session
+				.getPeerCertificates();
+		System.out.format("%d certificates found in chain\n",
+				certificates.length);
 		for (int i = 0; i < certificates.length; i++) {
 			X509Certificate certificate = certificates[i];
 			System.out.format("Certificate %d:\n", i);
 			System.out.format("Subject: %s\n", certificate.getSubjectDN());
 			System.out.format("Issuer: %s\n", certificate.getIssuerDN());
-			System.out.format("Validity: %s - %s\n", certificate.getNotBefore(), certificate.getNotAfter());
+			System.out.format("Validity: %s - %s\n",
+					certificate.getNotBefore(), certificate.getNotAfter());
 			System.out.format("Algorithm: %s\n", certificate.getSigAlgName());
-			System.out.format("Public Key length (modulus): %s\n", certificate.getPublicKey().getEncoded().length);
+			System.out.format("Public Key length (modulus): %s\n", certificate
+					.getPublicKey().getEncoded().length);
 			System.out.println();
 		}
 		System.out.println();
 	}
 
+	private TrustManagerFactory initTrustManager()
+			throws NoSuchAlgorithmException, KeyStoreException,
+			CertificateException, FileNotFoundException, IOException {
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+		if (trustStore == null) {
+			trustStore = "default";
+			tmf.init((KeyStore) null);
+			return tmf;
+		} else {
+			KeyStore ts = KeyStore.getInstance("JKS");
+			ts.load(new FileInputStream(trustStore), password.toCharArray());
+			tmf.init(ts);
+			return tmf;
+		}
+
+	}
+
 	private void printCertificatesInTruststore(TrustManagerFactory tmf) {
 		final X509TrustManager tm = (X509TrustManager) tmf.getTrustManagers()[0];
 		final X509Certificate[] trustedCerts = tm.getAcceptedIssuers();
-		System.out.format("Use default truststore with %d certificates\n",
-				trustedCerts.length);
+		System.out.format("Use %s truststore with %d certificates\n",
+				trustStore, trustedCerts.length);
 	}
 
 	private void printSupportedSuitesByServer(
