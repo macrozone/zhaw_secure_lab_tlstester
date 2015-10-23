@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -48,14 +49,38 @@ public class TLSTester {
 
 		printCertificatesInTruststore(tmf);
 		
+		
+		
 		SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
 		printHighestTLSVersion(socket);
 		String[] supportedSuites = socket.getSupportedCipherSuites();
+		
+		
+		SSLSession session = socket.getSession(); 
+		printCertificateChain(session);
 		printSupportedCipherSuites(supportedSuites);
 		List<String> supportedSuitesByServer = getEnabledSuitesByServer(
 				factory, supportedSuites);
 		printSupportedSuitesByServer(supportedSuitesByServer);
 
+	}
+
+	private void printCertificateChain(SSLSession session)
+			throws SSLPeerUnverifiedException {
+		X509Certificate[] certificates =
+				(X509Certificate[])session.getPeerCertificates();
+		System.out.format("%d certificates found in chain\n", certificates.length);
+		for (int i = 0; i < certificates.length; i++) {
+			X509Certificate certificate = certificates[i];
+			System.out.format("Certificate %d:\n", i);
+			System.out.format("Subject: %s\n", certificate.getSubjectDN());
+			System.out.format("Issuer: %s\n", certificate.getIssuerDN());
+			System.out.format("Validity: %s - %s\n", certificate.getNotBefore(), certificate.getNotAfter());
+			System.out.format("Algorithm: %s\n", certificate.getSigAlgName());
+			System.out.format("Public Key length (modulus): %s\n", certificate.getPublicKey().getEncoded().length);
+			System.out.println();
+		}
+		System.out.println();
 	}
 
 	private void printCertificatesInTruststore(TrustManagerFactory tmf) {
