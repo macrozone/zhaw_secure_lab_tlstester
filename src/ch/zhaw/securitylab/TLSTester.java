@@ -24,7 +24,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * This class serves to test SSL/TLS servers.
  * 
- * @author Marc Rennhard
+ * @author Marc Rennhard, Glenn Gruenberg
  */
 public class TLSTester {
 
@@ -46,8 +46,6 @@ public class TLSTester {
 	 */
 	private void run() throws Exception {
 
-		// To be implemented
-		
 		TrustManagerFactory tmf = initTrustManager();
 		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, tmf.getTrustManagers(), null);
@@ -57,14 +55,15 @@ public class TLSTester {
 		
 		SSLSocket socket = establishConnection(factory);
 		
-		
-		
 		printHighestTLSVersion(socket);
+		
 		String[] supportedSuites = socket.getSupportedCipherSuites();
 
 		SSLSession session = socket.getSession();
 		printCertificateChain(session);
+		
 		printSupportedCipherSuites(supportedSuites);
+		
 		List<String> supportedSuitesByServer = getEnabledSuitesByServer(
 				factory, supportedSuites);
 		printSupportedSuitesByServer(supportedSuitesByServer);
@@ -186,7 +185,7 @@ public class TLSTester {
 	 * The main method.
 	 * 
 	 * @param argv
-	 *            The command line parameters
+	 *            The command line parameters (java TLSTester host port {truststore password})
 	 * @throws Exception
 	 *             If an exception occurred
 	 */
