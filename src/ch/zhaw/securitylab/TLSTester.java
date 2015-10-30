@@ -33,6 +33,7 @@ public class TLSTester {
 	private static int port;
 	private static String trustStore = null;
 	private static String password = null;
+	private static CipherSuiteAuditor cipherSuiteAuditor = new CipherSuiteAuditor();
 
 	/**
 	 * The run method that executes all tests - Check if the server can be
@@ -52,36 +53,52 @@ public class TLSTester {
 		SSLSocketFactory factory = sslContext.getSocketFactory();
 
 		printCertificatesInTruststore(tmf);
-		
+
 		SSLSocket socket = establishConnection(factory);
-		
+
 		printHighestTLSVersion(socket);
-		
+
 		String[] supportedSuites = socket.getSupportedCipherSuites();
 
 		SSLSession session = socket.getSession();
 		printCertificateChain(session);
-		
+
 		printSupportedCipherSuites(supportedSuites);
-		
+
 		List<String> supportedSuitesByServer = getEnabledSuitesByServer(
 				factory, supportedSuites);
 		printSupportedSuitesByServer(supportedSuitesByServer);
+		printInsecureCypherSuites(supportedSuitesByServer);
+	}
+
+	private void printInsecureCypherSuites(List<String> supportedSuitesByServer) {
+		List<String> insecure = new ArrayList<String>();
+		for (String suite : supportedSuitesByServer) {
+			if (!cipherSuiteAuditor.isSecure(suite)) {
+				insecure.add(suite);
+			}
+		}
+		if (insecure.size() == 0) {
+			System.out
+					.println("No INSECURE cipher suites are supported by the server");
+		} else {
+			System.out.format("The following %d INSECURE cipher suites are supported by the server:\n",
+					insecure.size());
+			printSuites(insecure);
+		}
 
 	}
 
 	private SSLSocket establishConnection(SSLSocketFactory factory) {
 		String connected = "OK";
 		SSLSocket socket = null;
-		try{
+		try {
 			socket = (SSLSocket) factory.createSocket(host, port);
-		} catch(Exception e){
+		} catch (Exception e) {
 			connected = "FAILED\n" + e.getMessage();
 		}
-		
-		System.out.format("Check connectivity to %s:%s - %s\n",
-				host,
-				port,
+
+		System.out.format("Check connectivity to %s:%s - %s\n", host, port,
 				connected);
 		return socket;
 	}
@@ -90,15 +107,14 @@ public class TLSTester {
 			throws SSLPeerUnverifiedException {
 		X509Certificate[] certificates = (X509Certificate[]) session
 				.getPeerCertificates();
-	
-		
-		
+
 		System.out.format("%d certificates found in chain\n",
 				certificates.length);
-		
+
 		for (int i = 0; i < certificates.length; i++) {
-			X509Certificate certificate = certificates[certificates.length-i-1];
-			System.out.format("Certificate %d:\n", i+1);
+			X509Certificate certificate = certificates[certificates.length - i
+					- 1];
+			System.out.format("Certificate %d:\n", i + 1);
 			System.out.format("Subject: %s\n", certificate.getSubjectDN());
 			System.out.format("Issuer: %s\n", certificate.getIssuerDN());
 			System.out.format("Validity: %s - %s\n",
@@ -140,7 +156,11 @@ public class TLSTester {
 		System.out.format(
 				"The following suites %d are supported by the server:\n",
 				supportedSuitesByServer.size());
-		for (String suite : supportedSuitesByServer) {
+		printSuites(supportedSuitesByServer);
+	}
+
+	private void printSuites(List<String> suites) {
+		for (String suite : suites) {
 			System.out.println(suite);
 		}
 	}
@@ -185,7 +205,8 @@ public class TLSTester {
 	 * The main method.
 	 * 
 	 * @param argv
-	 *            The command line parameters (java TLSTester host port {truststore password})
+	 *            The command line parameters (java TLSTester host port
+	 *            {truststore password})
 	 * @throws Exception
 	 *             If an exception occurred
 	 */
