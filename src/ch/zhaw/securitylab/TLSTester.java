@@ -17,7 +17,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
@@ -82,8 +81,9 @@ public class TLSTester {
 			System.out
 					.println("No INSECURE cipher suites are supported by the server");
 		} else {
-			System.out.format("The following %d INSECURE cipher suites are supported by the server:\n",
-					insecure.size());
+			System.out
+					.format("The following %d INSECURE cipher suites are supported by the server:\n",
+							insecure.size());
 			printSuites(insecure);
 		}
 

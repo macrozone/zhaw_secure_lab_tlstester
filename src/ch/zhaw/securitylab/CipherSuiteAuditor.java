@@ -16,8 +16,6 @@ public class CipherSuiteAuditor {
 		// for the mapping
 		cipherKeyMap = new HashMap<String, Integer>();
 
-
-
 		cipherKeyMap.put("_WITH_IDEA_CBC_", 128);
 		cipherKeyMap.put("_WITH_RC2_CBC_40_", 40);
 		cipherKeyMap.put("_WITH_RC4_40_", 40);
@@ -41,7 +39,8 @@ public class CipherSuiteAuditor {
 	 * @return
 	 */
 	public boolean isSecure(String suite) {
-
+		if (isAnon(suite)) 
+			return false;
 		if (hasInsecureKeyLength(suite))
 			return false;
 		if (isRC4(suite))
@@ -53,6 +52,10 @@ public class CipherSuiteAuditor {
 
 	}
 
+	private boolean isAnon(String suite) {
+		return suite.toLowerCase().contains("anon");
+	}
+
 	private boolean hasInsecureKeyLength(String suite) {
 
 		int length = getKeyLength(suite);
@@ -62,7 +65,7 @@ public class CipherSuiteAuditor {
 
 	private int getKeyLength(String suite) {
 		for (Entry<String, Integer> entry : cipherKeyMap.entrySet()) {
-			if (suite.toLowerCase().indexOf(entry.getKey().toLowerCase()) != -1) {
+			if (suite.toLowerCase().contains(entry.getKey().toLowerCase())) {
 				return entry.getValue();
 			}
 		}
@@ -70,11 +73,11 @@ public class CipherSuiteAuditor {
 	}
 
 	private boolean isMd5(String suite) {
-		return suite.toLowerCase().indexOf("md5") != -1;
+		return suite.toLowerCase().contains("md5");
 	}
 
 	private boolean isRC4(String suite) {
-		return suite.toLowerCase().indexOf("rc4") != -1;
+		return suite.toLowerCase().contains("rc4");
 	}
 
 }
