@@ -91,8 +91,12 @@ public class TLSTester {
 			throws SSLPeerUnverifiedException {
 		X509Certificate[] certificates = (X509Certificate[]) session
 				.getPeerCertificates();
+	
+		
+		
 		System.out.format("%d certificates found in chain\n",
 				certificates.length);
+		
 		for (int i = 0; i < certificates.length; i++) {
 			X509Certificate certificate = certificates[certificates.length-i-1];
 			System.out.format("Certificate %d:\n", i+1);
